@@ -88,22 +88,22 @@ int main()
 	if (n > MAX_N) n = MAX_N;
 
 	double t = emscripten_performance_now();
-    n -= 5; // Remove characters for "UNITY" from the count.
+	n -= 5; // Remove characters for "UNITY" from the count.
 	for(int i = 2; i <= n; ++i)
 	{
-		y[i]     = MOD10(nity[i-1] + 3*unity[i-1]);            // (*6)
-		ty[i]    = MOD10(nity[i-1] + 3*unity[i-1] + y[i-1]);   // (*5)
-		ity[i]   = MOD10(nity[i-1] + 3*unity[i-1] + ty[i-1]);  // (*4)
-		nity[i]  = MOD10(nity[i-1] + 3*unity[i-1] + ity[i-1]); // (*3)
-		unity[i] = MOD10(nity[i-1] + 4*unity[i-1]);            // (*2)
+		y[i]     = MOD10(nity[i-1] + 3*unity[i-1]);             // (*6)
+		ty[i]    = MOD10(nity[i-1] + 3*unity[i-1] + y[i-1]);    // (*5)
+		ity[i]   = MOD10(nity[i-1] + 3*unity[i-1] + ty[i-1]);   // (*4)
+		nity[i]  = MOD10(nity[i-1] + 3*unity[i-1] + ity[i-1]);  // (*3)
+		unity[i] = MOD10(nity[i-1] + 4*unity[i-1]);             // (*2)
 	}
 
-    // Micro-optimization: final accumulation is symmetric around n/2.
+	// Micro-optimization: final accumulation is symmetric around n/2.
 	uint64_t count = 0;                                        // (*1)
-    for(int i = 0; i < (n+1)/2; ++i)                           // (*1)
-        count = MOD10(count + unity[i] * unity[n-i]);          // (*1)
-    count = MOD10(count*2);                                    // (*1)
-    if (!(n%2)) count = MOD10(count + unity[n/2]*unity[n/2]);  // (*1)
+	for(int i = 0; i < (n+1)/2; ++i)                           // (*1)
+		count = MOD10(count + unity[i] * unity[n-i]);           // (*1)
+	count = MOD10(count*2);                                    // (*1)
+	if (!(n%2)) count = MOD10(count + unity[n/2]*unity[n/2]);  // (*1)
 
 	double t2 = emscripten_performance_now();
 

@@ -55,11 +55,14 @@ int main()
 
 	uint16_t validMoves[NUM_MOVES];
 
+	// Between iterations we either have both knights at white squares, or both knights at black squares.
+	// Keep track of the parity to search only the relevant state space.
+	int boardParity = 0;
 	double t = emscripten_performance_now();
 	for(int n = 0; n < numMovePairs; ++n)
 	{
 		// White moves:
-		for(int whiteY = 0; whiteY < 8; ++whiteY) for(int whiteX = 0; whiteX < 8; ++whiteX)
+		for(int whiteY = 0; whiteY < 8; ++whiteY) for(int whiteX = (whiteY+boardParity)&1; whiteX < 8; whiteX += 2)
 		{
 			uint16_t whitePos = POS(whiteX, whiteY);
 
@@ -72,14 +75,16 @@ int main()
 					validMoves[numValidMoves++] = moves[move]; // This possibly includes white capturing black, will be filtered out in inner loop.
 			}
 
-			for(int blackY = 0; blackY < 8; ++blackY) for(int blackX = 0; blackX < 8; ++blackX)
+			for(int blackY = 0; blackY < 8; ++blackY) for(int blackX = (blackY+boardParity)&1; blackX < 8; blackX += 2)
 			{
 				// This 4x nested loop over knight positions would be faster with PDEP instruction, but not currently
 				// available in Wasm (https://github.com/WebAssembly/design/issues/1389)
 				uint16_t blackPos = POS(blackX, blackY);
-				double srcProbability = src[STATE(whitePos, blackPos)];
+				uint16_t state = STATE(whitePos, blackPos);
+				double srcProbability = src[state];
 				if (!srcProbability) // Skip if this board state has not occurred
 					continue;
+				src[state] = 0.0; // Clear the source state for next iteration.
 
 				int numValidMovesWithoutCapture = numValidMoves - (int)(abs((whiteX-blackX)*(whiteY-blackY)) == 2);
 
@@ -99,10 +104,9 @@ int main()
 		double *tmp = src;
 		src = dst;
 		dst = tmp;
-		memset(dst, 0, sizeof(p1));
 
 		// Black moves:
-		for(int blackY = 0; blackY < 8; ++blackY) for(int blackX = 0; blackX < 8; ++blackX)
+		for(int blackY = 0; blackY < 8; ++blackY) for(int blackX = ((blackY+boardParity)&1); blackX < 8; blackX += 2)
 		{
 			uint16_t blackPos = POS(blackX, blackY);
 
@@ -115,12 +119,14 @@ int main()
 					validMoves[numValidMoves++] = moves[move];
 			}
 
-			for(int whiteY = 0; whiteY < 8; ++whiteY) for(int whiteX = 0; whiteX < 8; ++whiteX)
+			for(int whiteY = 0; whiteY < 8; ++whiteY) for(int whiteX = ((whiteY+1-boardParity)&1); whiteX < 8; whiteX += 2)
 			{
 				uint16_t whitePos = POS(whiteX, whiteY);
-				double srcProbability = src[STATE(whitePos, blackPos)];
+				uint16_t state = STATE(whitePos, blackPos);
+				double srcProbability = src[state];
 				if (!srcProbability) // Skip if this board state has not occurred
 					continue;
+				src[state] = 0.0;
 
 				// Take each move with uniform probability
 				double dstProbability = srcProbability / numValidMoves;
@@ -137,10 +143,10 @@ int main()
 			}
 		}
 
+		boardParity = 1 - boardParity;
 		tmp = src;
 		src = dst;
 		dst = tmp;
-		memset(dst, 0, sizeof(p1));
 	}
 	double t2 = emscripten_performance_now();
 

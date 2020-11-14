@@ -45,14 +45,16 @@ uint64_t solve(int x, int y, bool solveScales)
 	}
 }
 
-int main()
+EM_BOOL foo(double time, void *userData)
 {
-	latticeSize = EM_ASM_INT(return parseInt(location.search.substr(1) || '12345')) + 1;
-
 	double t = emscripten_performance_now();
 
 	// Calculate unrotated positions:
+#ifdef FAST_VERSION
 	uint64_t count = 4*(solve(1, 0, true) + solve(1, 1, true)); // Mirror 4* for (i,0),(-i,0),(0,i),(0,-i) and (i,i),(i,-i),(-i,i),(-i,-i)
+#else
+	uint64_t count = 0;
+#endif
 
 	// Fit all possible (x,y) basis rotations of the T shape to the lattice grid.
 	for(int y = 2;; ++y)
@@ -67,8 +69,20 @@ int main()
 		if (count == count0)
 			break; // Sizes are only getting larger after this, if this Y size didn't fit, later ones won't either
 	}
+#ifndef FAST_VERSION
+	count += 4*(solve(1, 0, true) + solve(1, 1, true)); // Mirror 4* for (i,0),(-i,0),(0,i),(0,-i) and (i,i),(i,-i),(-i,i),(-i,-i)
+#endif
 	double t2 = emscripten_performance_now();
 
 	EM_ASM(document.body.innerHTML += 'Num T shapes in a lattice grid of size ' + ($0-1) + ': ' + $1 + '. (calculated in ' + $2.toFixed(3) + ' msecs)<br>',
 		latticeSize, (double)count, t2 - t);
+	
+	return EM_TRUE;
+}
+
+int main()
+{
+	latticeSize = EM_ASM_INT(return parseInt(location.search.substr(1) || '12345')) + 1;
+
+	emscripten_set_timeout_loop(foo, 100, 0);
 }

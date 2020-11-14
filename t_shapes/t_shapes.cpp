@@ -1,17 +1,15 @@
 #include <emscripten.h>
 #include <emscripten/html5.h>
 #include <stdint.h>
-#include <limits.h>
-#include <stdio.h>
-#include <math.h>
 
 #define MIN(x, y) ((x) <= (y) ? (x) : (y))
 #define MAX(x, y) ((x) >= (y) ? (x) : (y))
 
 static int latticeSize;
 
-// In the orientation that we compute the transforms, the size of the
-// transformed shape is defined by only the two vertices out of all eight.
+// In the orientation that we compute the transforms, the axis-aligned bounding box size
+// of the transformed shape is defined by only the two vertices out of all eight
+// (+ (0,0) origin).
 #define NUM_VERTICES 2
 const int vertsX[NUM_VERTICES] = { 2, 3, /*0, 0, 1, 2, 1, 3,*/ };
 const int vertsY[NUM_VERTICES] = { 3, 1, /*0, 1, 1, 1, 3, 0,*/ };

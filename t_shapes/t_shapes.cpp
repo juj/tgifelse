@@ -2,10 +2,11 @@
 #include <emscripten/html5.h>
 #include <stdint.h>
 
+extern "C" void logResults(int size, double count, double time);
+extern "C" int readInputSize(void);
+
 #define MIN(x, y) ((x) <= (y) ? (x) : (y))
 #define MAX(x, y) ((x) >= (y) ? (x) : (y))
-
-static int latticeSize;
 
 // In the orientation that we compute the transforms, the axis-aligned bounding box size
 // of the transformed shape is defined by only the two vertices out of all eight
@@ -13,6 +14,8 @@ static int latticeSize;
 #define NUM_VERTICES 2
 const int vertsX[NUM_VERTICES] = { 2, 3, /*0, 0, 1, 2, 1, 3,*/ };
 const int vertsY[NUM_VERTICES] = { 3, 1, /*0, 1, 1, 1, 3, 0,*/ };
+
+int latticeSize = readInputSize() + 1;
 
 uint64_t solve(int x, int y, bool solveScales)
 {
@@ -45,10 +48,8 @@ uint64_t solve(int x, int y, bool solveScales)
 	}
 }
 
-int main()
+int main(int argc, char **argv)
 {
-	latticeSize = EM_ASM_INT(return parseInt(location.search.substr(1) || '12345')) + 1;
-
 	double t = emscripten_performance_now();
 
 	// Calculate unrotated positions:
@@ -67,8 +68,7 @@ int main()
 		if (count == count0)
 			break; // Sizes are only getting larger after this, if this Y size didn't fit, later ones won't either
 	}
-	double t2 = emscripten_performance_now();
 
-	EM_ASM(document.body.innerHTML += 'Num T shapes in a lattice grid of size ' + ($0-1) + ': ' + $1 + '. (calculated in ' + $2.toFixed(3) + ' msecs)<br>',
-		latticeSize, (double)count, t2 - t);
+	double t2 = emscripten_performance_now();
+	logResults(latticeSize, (double)count, t2 - t);
 }

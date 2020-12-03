@@ -1,0 +1,41 @@
+<!doctype html><html lang="en-us"><head><meta charset="utf-8"><meta http-equiv='origin-trial' content='Aim2yLOVt4HasOONrJxZrZaRTMwisVhOPE0NDc+kp3A6mnmOHLCH0Byvu308SyiwjmQMQjum0Ytq7YzAamPXNwMAAABSeyJvcmlnaW4iOiJodHRwczovL2NsYnJpLmNvbTo0NDMiLCJmZWF0dXJlIjoiV2ViQXNzZW1ibHlTaW1kIiwiZXhwaXJ5IjoxNjA5MTcyMzI4fQ=='></head>
+<body>
+<script>
+#if !MODULARIZE
+  var Module = {
+#if USE_PTHREADS
+    worker: '{{{ PTHREAD_WORKER_FILE }}}'
+#endif
+};
+#endif
+
+#if WASM == 2
+  var supportsWasm = window.WebAssembly && location.search.indexOf('_rwasm=0') < 0;
+#endif
+
+#if USE_WASM_WORKERS
+  if (typeof SharedArrayBuffer === 'undefined') {
+  	document.body.innerHTML = 'Sorry, SharedArrayBuffer + Atomics is not supported by current browser. :(';
+  	throw 'Sorry, SharedArrayBuffer + Atomics is not supported by current browser. :(';
+  }
+#endif
+
+// Depending on the build flags that one uses, different files need to be downloaded
+// to load the compiled page. The right set of files will be expanded to be downloaded
+// via the directive below.
+{{{ DOWNLOAD_JS_AND_WASM_FILES }}}
+
+#if SINGLE_FILE
+// If we are doing a SINGLE_FILE=1 build, inlined JS runtime code follows here:
+{{{ JS_CONTENTS_IN_SINGLE_FILE_BUILD }}}
+
+#if MODULARIZE
+// Launch the MODULARIZEd build.
+{{{ EXPORT_NAME }}}({});
+#endif
+
+#endif
+
+</script>
+</body>
+</html>
